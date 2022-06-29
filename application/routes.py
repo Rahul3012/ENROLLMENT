@@ -3,9 +3,19 @@ from flask import render_template
 
 
 @app.route("/")
-def home():
-    return render_template("index.html")
-
 @app.route("/index")
+@app.route("/home")
 def index():
-    return "<h1>Hello Earth</h1>"
+    return render_template("index.html", login=True)
+
+@app.route("/login")
+def login():
+    return render_template("login.html", login=True)
+
+@app.route("/courses")
+def courses():
+    return render_template("course.html", login=True)
+
+@app.route("/register")
+def register():
+    return render_template("register.html", login=True)
