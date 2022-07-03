@@ -1,5 +1,7 @@
-from application import app
-from flask import render_template, request
+from application import app, db
+from flask import render_template, request, json, Response
+
+coursesData = [{"courseID":"1111","title":"ReactJs 111","description":"Intro to ReactJs","credits":"3","term":"Fall, Spring"}, {"courseID":"2222","title":"Java 1","description":"Intro to Java Programming","credits":"4","term":"Spring"}, {"courseID":"3333","title":"Adv ReactJs 201","description":"Advanced ReactJs Programming","credits":"3","term":"Fall"}, {"courseID":"4444","title":"Angular 1","description":"Intro to Angular","credits":"3","term":"Fall, Spring"}, {"courseID":"5555","title":"Java 2","description":"Advanced Java Programming","credits":"4","term":"Fall"}]
 
 
 @app.route("/")
@@ -15,7 +17,6 @@ def login():
 @app.route("/courses/")
 @app.route("/courses/<term>")
 def courses(term="2019"):
-    coursesData = [{"courseID":"1111","title":"ReactJs 111","description":"Intro to ReactJs","credits":"3","term":"Fall, Spring"}, {"courseID":"2222","title":"Java 1","description":"Intro to Java Programming","credits":"4","term":"Spring"}, {"courseID":"3333","title":"Adv ReactJs 201","description":"Advanced ReactJs Programming","credits":"3","term":"Fall"}, {"courseID":"4444","title":"Angular 1","description":"Intro to Angular","credits":"3","term":"Fall, Spring"}, {"courseID":"5555","title":"Java 2","description":"Advanced Java Programming","credits":"4","term":"Fall"}]
     return render_template("courses.html", coursesData = coursesData, courses = True,term = term)
 
 @app.route("/register")
@@ -28,3 +29,26 @@ def enrollment():
     title = request.form.get('title')
     term = request.form.get('term')
     return render_template("enrollment.html", enrollment=True, data={"id":id, "title":title, "term":term})
+
+@app.route("/api/")
+@app.route("/api/<idx>")
+def api(idx=None):
+    jdata=json.dumps(coursesData)
+    if(not idx==None):
+        jdata = json.dumps(coursesData[int(idx)])
+    return Response(jdata, mimetype="application/json")
+
+class User(db.Document):
+    user_id     = db.IntField(unique = True)
+    first_name  = db.StringField( max_length = 50)
+    last_name   = db.StringField( max_length = 50)
+    email       = db.StringField( max_length = 50)
+    password    = db.StringField( max_length = 50)
+
+@app.route("/user")
+def user():
+    User(user_id=1, first_name = "ABC", last_name="XYZ", email="sample@fake.dat", password="*****").save()
+    User(user_id=2, first_name = "DEF", last_name="UVW", email="sample2@fake.dat", password="*****").save()
+    users = User.objects.all()
+    return render_template("user.html", users = users)
+
