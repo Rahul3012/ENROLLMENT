@@ -55,10 +55,17 @@ def register():
 
 @app.route("/enrollment", methods=["GET", "POST"])
 def enrollment():
-    id = request.form.get('courseID')
-    title = request.form.get('title')
+    course_id = request.form.get('course_id')
+    course_title = request.form.get('title')
     term = request.form.get('term')
-    return render_template("enrollment.html", enrollment=True, data={"id":id, "title":title, "term":term})
+    if Enrollment.objects(user_id = user_id, course_id=course_id):
+        flash(f"oops! you already registered to the course {courseTitle}!", "danger")
+        return redirect(url_for("courses"))
+    else:
+        Enrollment(user_id=user_id, course_id=course_id)
+        flash(f"You are successfully registered to the course {courseTitle}!", "success")
+    classes = None
+    return render_template("enrollment.html", enrollment=True, classes=classes data={"id":id, "title":title, "term":term})
 
 @app.route("/api/")
 @app.route("/api/<idx>")
