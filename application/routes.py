@@ -1,10 +1,9 @@
 from application import app, db
-from flask import render_template, request, json, Response, redirect, flash
+from flask import render_template, request, json, Response, redirect, flash, url_for
 from application.models import User, Course, Enrollment
 from application.forms import LoginForm, RegisterForm
 
-coursesData = [{"courseID":"1111","title":"ReactJs 111","description":"Intro to ReactJs","credits":"3","term":"Fall, Spring"}, {"courseID":"2222","title":"Java 1","description":"Intro to Java Programming","credits":"4","term":"Spring"}, {"courseID":"3333","title":"Adv ReactJs 201","description":"Advanced ReactJs Programming","credits":"3","term":"Fall"}, {"courseID":"4444","title":"Angular 1","description":"Intro to Angular","credits":"3","term":"Fall, Spring"}, {"courseID":"5555","title":"Java 2","description":"Advanced Java Programming","credits":"4","term":"Fall"}]
-
+courseData = [{"courseID":"1111","title":"PHP 111","description":"Intro to PHP","credits":"3","term":"Fall, Spring"}, {"courseID":"2222","title":"Java 1","description":"Intro to Java Programming","credits":"4","term":"Spring"}, {"courseID":"3333","title":"Adv PHP 201","description":"Advanced PHP Programming","credits":"3","term":"Fall"}, {"courseID":"4444","title":"Angular 1","description":"Intro to Angular","credits":"3","term":"Fall, Spring"}, {"courseID":"5555","title":"Java 2","description":"Advanced Java Programming","credits":"4","term":"Fall"}]
 
 @app.route("/")
 @app.route("/index")
@@ -57,15 +56,54 @@ def register():
 def enrollment():
     course_id = request.form.get('course_id')
     course_title = request.form.get('title')
-    term = request.form.get('term')
-    if Enrollment.objects(user_id = user_id, course_id=course_id):
-        flash(f"oops! you already registered to the course {courseTitle}!", "danger")
-        return redirect(url_for("courses"))
-    else:
-        Enrollment(user_id=user_id, course_id=course_id)
-        flash(f"You are successfully registered to the course {courseTitle}!", "success")
+    user_id = 1
+
+    if course_id:
+        if Enrollment.objects(user_id = user_id, course_id=course_id):
+            flash(f"oops! you already registered to the course {course_title}!", "danger")
+            return redirect(url_for("courses"))
+        else:
+            Enrollment(user_id=user_id, course_id=course_id).save()
+        flash(f"You are successfully registered to the course {course_title}!", "success")
     classes = None
-    return render_template("enrollment.html", enrollment=True, classes=classes data={"id":id, "title":title, "term":term})
+    classes = list( User.objects.aggregate(*[
+            {
+                '$lookup': {
+                    'from': 'enrollment', 
+                    'localField': 'user_id', 
+                    'foreignField': 'user_id', 
+                    'as': 'r1'
+                }
+            }, {
+                '$unwind': {
+                    'path': '$r1', 
+                    'includeArrayIndex': 'r1_id', 
+                    'preserveNullAndEmptyArrays': False
+                }
+            }, {
+                '$lookup': {
+                    'from': 'course', 
+                    'localField': 'r1.course_id', 
+                    'foreignField': 'course_id', 
+                    'as': 'r2'
+                }
+            }, {
+                '$unwind': {
+                    'path': '$r2', 
+                    'preserveNullAndEmptyArrays': False
+                }
+            }, {
+                '$match': {
+                    'user_id': user_id
+                }
+            }, {
+                '$sort': {
+                    'course_id': 1
+                }
+            }
+        ]))
+
+    return render_template("enrollment.html", enrollment=True, title="Enrollment", classes=classes)    
 
 @app.route("/api/")
 @app.route("/api/<idx>")
@@ -80,3 +118,4 @@ def user():
     users = User.objects.all()
     return render_template("user.html", users = users)
 
+ 
